@@ -1,17 +1,50 @@
 import "./App.css";
 import { Auth } from "./authModule/auth";
-import * as ReactDOM from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+  useNavigate,
+} from "react-router-dom";
 import Questions from "./quizModule/question";
+import { app } from "./config";
+import { useState, useEffect } from "react";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 function App() {
+  const auth = getAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  app;
+
+  useEffect(() => {
+    console.log("app");
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("user", auth);
+      if (user) {
+        console.log("user", user);
+        // L'utilisateur est connecté
+        setIsAuthenticated(true);
+      } else {
+        // L'utilisateur n'est pas connecté
+        setIsAuthenticated(false);
+      }
+    });
+
+    // Nettoyer l'observateur lors du démontage du composant
+    return () => unsubscribe();
+  }, [auth]);
+
   const router = createBrowserRouter([
     {
-      path: "/",
+      path: "/login",
       element: <Auth />,
     },
     {
+      path: "/",
+      element: <Navigate to="/login" />,
+    },
+    {
       path: "/home",
-      element: <Questions />,
+      element: isAuthenticated ? <Questions /> : <Auth />,
     },
   ]);
   return (

@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useState } from "react";
 import { users } from "../../helpers";
 import { Link, useNavigate } from "react-router-dom";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 export const Forms = () => {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export const Forms = () => {
   });
   const [error, setError] = useState<string>("");
   const [disable, setDisable] = useState<boolean>(true);
+  const authe = getAuth();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement> | undefined) => {
     const { name, value } = e!.target;
@@ -22,12 +24,15 @@ export const Forms = () => {
 
   const handleSubmitAuth = (event: FormEvent<HTMLFormElement> | undefined) => {
     event?.preventDefault();
-    console.log("clicked");
-    if (auth.username == "admin" && auth.password == "admin") {
-      navigate("/home");
-    } else {
-      setError("Username or password invalide");
-    }
+    signInWithEmailAndPassword(authe, auth.username, auth.password)
+      .then(() => {
+        console.log("connecter");
+        navigate("/home");
+      })
+      .catch((error) => {
+        console.log("error", error);
+        setError("Adresse ou mots de passe incorrect");
+      });
   };
 
   return (
