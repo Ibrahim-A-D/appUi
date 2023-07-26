@@ -16,12 +16,15 @@ import TextField from "@mui/material/TextField";
 import { db } from "../config";
 import { dataToSave } from "../helpers";
 import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
+import useArticleStore from "../store/formStore";
 
 const Questions = () => {
   const [value, setValue] = useState("false");
   const [data, setData] = useState<any[]>([]);
-  const [message, setMessage] = useState<string>("");
   const [boxIndex, setBoxIndex] = useState(null);
+  const [comments, setComments] = useState<string[]>([]);
+  const [userResponses, setUserResponses] = useState<any[]>([]);
+  const useStore = useArticleStore();
 
   const handleBoxClick = (index: any) => {
     if (boxIndex === index) {
@@ -32,12 +35,24 @@ const Questions = () => {
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValue((event.target as HTMLInputElement).value);
+    // Here, we store the user's response for the selected question
+    const { name, value } = event.target;
+    const responseIndex = parseInt(name); // Get the question index
+    const updatedUserResponses = [...userResponses];
+    updatedUserResponses[responseIndex] = value; // Store the response in the array
+    setUserResponses(updatedUserResponses);
   };
 
-  const handleChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("value", event.target.value);
-    setMessage(event.target.value);
+  const handleChangeInput = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const newComment = event.target.value;
+    setComments((prevComments) => {
+      const updatedComments = [...prevComments];
+      updatedComments[index] = newComment;
+      return updatedComments;
+    });
   };
 
   useEffect(() => {
@@ -69,7 +84,7 @@ const Questions = () => {
   //     // Boucle sur chaque objet dans le tableau de données
   //     for (const item of data) {
   //       // Ajoutez le document dans la collection "users" avec l'e-mail comme ID du document
-  //       await addDoc(collection(db, "third"), {
+  //       await addDoc(collection(db, "four"), {
   //         email: item.email,
   //         questions: item.questions,
   //         reponse: item.reponse,
@@ -130,15 +145,15 @@ const Questions = () => {
                     )}
                   </div>
                   {boxIndex === index && (
-                    <ul key={index} className="">
+                    <ul className="">
                       <li>
                         {elem &&
                           elem.map(
-                            (elemA: any, index: any) =>
+                            (elemA: any, responseIndex: any) =>
                               elemA &&
                               elemA.reponse.map((valueRes: any) => (
                                 <div
-                                  key={index}
+                                  key={responseIndex}
                                   className="flex items-center justify-between w-full"
                                 >
                                   <p className="mt-4 text-base leading-normal text-gray-600 lg:w-96">
@@ -150,8 +165,10 @@ const Questions = () => {
                                     </FormLabel>
                                     <RadioGroup
                                       aria-labelledby="demo-controlled-radio-buttons-group"
-                                      name="controlled-radio-buttons-group"
-                                      value={value}
+                                      name={responseIndex.toString()} // Pass the question index as the name for the radio group
+                                      value={
+                                        userResponses[responseIndex] || "false"
+                                      } // Retrieve the user's response if available
                                       onChange={handleChange}
                                     >
                                       <FormControlLabel
@@ -177,7 +194,8 @@ const Questions = () => {
                           rows={4}
                           placeholder="Laisser un commentaire"
                           className="w-full"
-                          onChange={handleChangeInput}
+                          value={comments[index] || ""}
+                          onChange={(e: any) => handleChangeInput(e, index)}
                         />
                       </li>
                     </ul>
@@ -186,6 +204,12 @@ const Questions = () => {
               </div>
             ))}
         </div>
+      </div>
+      <div
+        className=" bg-blue-600 absolute right-14
+      w-[100px] h-[50px] flex justify-center items-center"
+      >
+        <button type="submit">envoyer</button>
       </div>
     </div>
   );

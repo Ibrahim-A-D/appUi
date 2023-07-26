@@ -10,6 +10,7 @@ import Questions from "./quizModule/question";
 import { app } from "./config";
 import { useState, useEffect } from "react";
 import { onAuthStateChanged, getAuth } from "firebase/auth";
+import Souscription from "./authModule/components/souscription";
 function App() {
   const auth = getAuth();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -45,6 +46,10 @@ function App() {
     {
       path: "/home",
       element: isAuthenticated ? <Questions /> : <Auth />,
+    },
+    {
+      path: "/sign-in",
+      element: <Souscription />,
     },
   ]);
   return (

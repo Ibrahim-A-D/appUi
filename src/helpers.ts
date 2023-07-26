@@ -4,7 +4,22 @@ export interface users {
     password : string;
 }
 
-export const dataToSave = [
+export interface dataOfQuestion{
+    firstQuestion : string;
+}
+export interface reponse{
+    rep1 : string;
+    repChoix : string;
+}
+
+export interface dataToSave{
+    email : string;
+    questions : dataOfQuestion[];
+    reponse : reponse[];
+    commantaire : string;
+}
+
+export const dataToSave:dataToSave[] = [
   {
     email: "ibrah25.b@gmail.com",
     questions: [
@@ -14,17 +29,18 @@ export const dataToSave = [
     reponse: [
       {
         rep1: "aafd",
-        repChoix: true,
+        repChoix: "",
       },
       {
         rep1: "qertqe",
-        repChoix: true,
+        repChoix: "",
       },
       {
         rep1: "aqeqr",
-        repChoix: true,
+        repChoix: "",
       },
     ],
+    commantaire : ""
   },
   {
     email: "",
@@ -35,37 +51,17 @@ export const dataToSave = [
     reponse: [
       {
         rep1: "aafdgge",
-        repChoix: true,
+        repChoix: "",
       },
       {
         rep1: "qertqeeqer",
-        repChoix: true,
+        repChoix: "",
       },
       {
         rep1: "aqeqreqrq",
-        repChoix: true,
+        repChoix: "",
       },
     ],
-  },
-  {
-    email: "",
-    questions: [
-      { firstQuestion: "manger" },
-      { firstQuestion: "tot au tard ici" },
-    ],
-    reponse: [
-      {
-        rep1: "ha la vie",
-        repChoix: true,
-      },
-      {
-        rep1: "nord ici",
-        repChoix: true,
-      },
-      {
-        rep1: "vers du nez",
-        repChoix: true,
-      },
-    ],
+    commantaire : ""
   },
 ];
