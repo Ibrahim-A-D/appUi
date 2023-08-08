@@ -3,8 +3,11 @@ import { makeAutoObservable } from "mobx";
 import { dataOfQuestion, dataToSave, reponse } from "../helpers";
 
 export class ArticleStore {
+  emailUser =""
   order: dataToSave = {
     email: "",
+    first:0,
+    commentaire:"",
     questions: [
       { 
         firstQuestion: ""
@@ -27,13 +30,14 @@ export class ArticleStore {
         repChoix: "",
       },
     ],
-    commantaire : ""
   };
 
   constructor() {
     makeAutoObservable(this);
   }
-
+  setEmailUser(email:string){
+    this.emailUser = email
+  }
   setOrder(order: dataToSave | any) {
     this.order = order;
     console.log(" dd",order);

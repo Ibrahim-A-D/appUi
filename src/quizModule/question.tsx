@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
@@ -14,17 +16,30 @@ import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import TextField from "@mui/material/TextField";
 import { db } from "../config";
+import { getAuth } from "firebase/auth";
 import { dataToSave } from "../helpers";
-import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+  setDoc,
+  doc,
+  onSnapshot,
+  where,
+  query,
+  orderBy,
+  FieldPath,
+} from "firebase/firestore";
 import useArticleStore from "../store/formStore";
 
 const Questions = () => {
-  const [value, setValue] = useState("false");
   const [data, setData] = useState<any[]>([]);
+  const [datacopy, setDataCopy] = useState<any[]>([]);
   const [boxIndex, setBoxIndex] = useState(null);
   const [comments, setComments] = useState<string[]>([]);
-  const [userResponses, setUserResponses] = useState<any[]>([]);
-  const useStore = useArticleStore();
+  const auth = getAuth();
+  const userStore = useArticleStore();
 
   const handleBoxClick = (index: any) => {
     if (boxIndex === index) {
@@ -34,68 +49,171 @@ const Questions = () => {
     }
   };
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // Here, we store the user's response for the selected question
-    const { name, value } = event.target;
-    const responseIndex = parseInt(name); // Get the question index
-    const updatedUserResponses = [...userResponses];
-    updatedUserResponses[responseIndex] = value; // Store the response in the array
-    setUserResponses(updatedUserResponses);
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      userStore.setEmailUser(user.email!);
+    } else {
+      console.log("User Signed Out");
+    }
+  });
+
+  const handleChange = (
+    index: number,
+    innerIndex: number,
+    responseIndex: number,
+    target: { value: string }
+  ) => {
+    setData((currentData) => {
+      // Clone the elements to avoid modifying the state directly
+      const newData = [...currentData];
+      const newInnerData = [...newData[index]];
+
+      const newElem = { ...newInnerData[innerIndex] };
+      const newRep = { ...newElem.reponse[responseIndex] };
+
+      // Update the repChoix field
+      newRep.repChoix = target.value;
+
+      // Update the nested objects and array
+      newElem.reponse[responseIndex] = newRep;
+      newInnerData[innerIndex] = newElem;
+
+      newData[index] = newInnerData;
+
+      return newData;
+    });
   };
 
   const handleChangeInput = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    index: number
+    event: any,
+    mainIndex: number,
+    subIndex: number
   ) => {
-    const newComment = event.target.value;
-    setComments((prevComments) => {
-      const updatedComments = [...prevComments];
-      updatedComments[index] = newComment;
-      return updatedComments;
+    setData((currentData) => {
+      const newData = [...currentData];
+      const newObject = { ...newData[mainIndex][subIndex] };
+      newObject.commentaire = event.target.value;
+      newData[mainIndex][subIndex] = newObject;
+      return newData;
     });
   };
 
   useEffect(() => {
-    // Fonction pour récupérer les données de toutes les collections
-    // Fonction pour récupérer les données de Firestore
-    const fetchUsers = async () => {
-      try {
-        const usersCollection = collection(db, "third");
-        const usersSnapshot = await getDocs(usersCollection);
+    const fetchUsers = () => {
+      const usersCollection = collection(db, "modele");
+      const specificEmailQuery = query(
+        usersCollection,
+        where("email", "==", userStore.emailUser),
+        orderBy("ordre")
+      );
+      const emptyEmailQuery = query(
+        usersCollection,
+        where("email", "==", ""),
+        orderBy("ordre")
+      );
+      const unsubscribeSpecificEmail = onSnapshot(
+        specificEmailQuery,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const usersData = snapshot.docs.map((doc) => doc.data());
+            setData(usersData.map((user) => [user]));
+          } else {
+            unsubscribeSpecificEmail();
+            const unsubscribeEmptyEmail = onSnapshot(
+              emptyEmailQuery,
+              (snapshot) => {
+                const usersData = snapshot.docs.map((doc) => doc.data());
+                setData(usersData.map((user) => [user]));
+              },
+              (error) => {
+                console.error(
+                  "Erreur lors de la récupération des utilisateurs:",
+                  error
+                );
+              }
+            );
+            return unsubscribeEmptyEmail;
+          }
+        },
+        (error) => {
+          console.error(
+            "Erreur lors de la récupération des utilisateurs:",
+            error
+          );
+        }
+      );
 
-        const usersData = usersSnapshot.docs.map((doc) => doc.data());
-        setData(usersData.map((user) => [user]));
-      } catch (error) {
-        console.error(
-          "Erreur lors de la récupération des utilisateurs :",
-          error
-        );
-      }
+      return unsubscribeSpecificEmail;
     };
 
-    // Appeler la fonction pour récupérer les données
-    // saveDataToFirestore(dataToSave);
     fetchUsers();
+    // saveDataToFirestoreFirst();
   }, []);
 
-  // Fonction pour sauvegarder les données dans Firestore
-  // const saveDataToFirestore = async (data: any) => {
+  const SendForm = () => {
+    saveDataToFirestore(data);
+  };
+
+  // const saveDataToFirestoreFirst = async () => {
   //   try {
   //     // Boucle sur chaque objet dans le tableau de données
-  //     for (const item of data) {
-  //       // Ajoutez le document dans la collection "users" avec l'e-mail comme ID du document
-  //       await addDoc(collection(db, "four"), {
+  //     for (const item of dataToSave) {
+  //       await addDoc(collection(db, "modele"), {
   //         email: item.email,
   //         questions: item.questions,
   //         reponse: item.reponse,
+  //         commentaire: item.commentaire,
   //       });
   //     }
-
   //     console.log("Données sauvegardées avec succès dans Firestore !");
   //   } catch (error) {
   //     console.error("Erreur lors de la sauvegarde des données :", error);
   //   }
   // };
+  // Fonction pour sauvegarder les données dans Firestore
+  const saveDataToFirestore = async (data: any) => {
+    let newFlatData = data && data.flat();
+
+    try {
+      for (const item of newFlatData) {
+        // Query the 'third' collection for documents where 'email' field is equal to the provided email
+        const q = query(
+          collection(db, "third"),
+          where("email", "==", userStore.emailUser)
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          // If no such documents exist, create a new document
+          await addDoc(collection(db, "third"), {
+            email: userStore.emailUser,
+            questions: item.questions,
+            reponse: item.reponse,
+            commentaire: item.commentaire,
+          });
+        } else {
+          // If such documents exist, update them
+          querySnapshot.forEach(async (doc) => {
+            await setDoc(
+              doc.ref,
+              {
+                email: userStore.emailUser,
+                questions: item.questions,
+                reponse: item.reponse,
+                commentaire: item.commentaire,
+              },
+              { merge: true }
+            );
+          });
+        }
+      }
+
+      console.log("Data saved successfully to Firestore!");
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde des données :", error);
+    }
+  };
 
   return (
     <div>
@@ -111,7 +229,7 @@ const Questions = () => {
               role="heading"
               className="text-xl font-bold leading-10 text-white xl:text-6xl md:text-5xl"
             >
-              Questions posées
+              Asked Questions
             </h1>
           </div>
           {data &&
@@ -126,16 +244,18 @@ const Questions = () => {
                     <div>
                       {elem &&
                         elem.map(
-                          (elemA: any, index: any) =>
+                          (elemA: any) =>
                             elemA &&
-                            elemA.questions.map((valueOfQuestion: any) => (
-                              <h2
-                                key={index}
-                                className="text-base font-semibold leading-none text-gray-800"
-                              >
-                                {valueOfQuestion.firstQuestion}
-                              </h2>
-                            ))
+                            elemA.questions.map(
+                              (valueOfQuestion: any, index: any) => (
+                                <h2
+                                  key={index}
+                                  className="text-base font-semibold leading-none text-gray-800"
+                                >
+                                  {valueOfQuestion.firstQuestion}
+                                </h2>
+                              )
+                            )
                         )}
                     </div>
                     {boxIndex === index ? (
@@ -149,53 +269,63 @@ const Questions = () => {
                       <li>
                         {elem &&
                           elem.map(
-                            (elemA: any, responseIndex: any) =>
+                            (elemA: any, innerIndex: any) =>
                               elemA &&
-                              elemA.reponse.map((valueRes: any) => (
-                                <div
-                                  key={responseIndex}
-                                  className="flex items-center justify-between w-full"
-                                >
-                                  <p className="mt-4 text-base leading-normal text-gray-600 lg:w-96">
-                                    {valueRes.rep1}
-                                  </p>
-                                  <FormControl>
-                                    <FormLabel id="demo-controlled-radio-buttons-group">
-                                      Choix
-                                    </FormLabel>
-                                    <RadioGroup
-                                      aria-labelledby="demo-controlled-radio-buttons-group"
-                                      name={responseIndex.toString()} // Pass the question index as the name for the radio group
-                                      value={
-                                        userResponses[responseIndex] || "false"
-                                      } // Retrieve the user's response if available
-                                      onChange={handleChange}
+                              elemA.reponse.map(
+                                (valueRes: any, responseIndex: any) => (
+                                  <>
+                                    <div
+                                      key={responseIndex}
+                                      className="flex items-center justify-between w-full"
                                     >
-                                      <FormControlLabel
-                                        value="true"
-                                        control={<Radio />}
-                                        label="Vrai"
-                                      />
-                                      <FormControlLabel
-                                        value="false"
-                                        control={<Radio />}
-                                        label="Faux"
-                                      />
-                                    </RadioGroup>
-                                  </FormControl>
-                                </div>
-                              ))
+                                      <p className="mt-4 text-base leading-normal text-gray-600 lg:w-96">
+                                        {valueRes.rep1}
+                                      </p>
+                                      <FormControl>
+                                        <FormLabel id="demo-controlled-radio-buttons-group">
+                                          Choose
+                                        </FormLabel>
+                                        <RadioGroup
+                                          aria-labelledby="demo-controlled-radio-buttons-group"
+                                          name={valueRes.rep1}
+                                          value={valueRes.repChoix}
+                                          onChange={(event) =>
+                                            handleChange(
+                                              index,
+                                              innerIndex,
+                                              responseIndex,
+                                              event.target
+                                            )
+                                          }
+                                        >
+                                          <FormControlLabel
+                                            value="true"
+                                            control={<Radio />}
+                                            label="true"
+                                          />
+                                          <FormControlLabel
+                                            value="false"
+                                            control={<Radio />}
+                                            label="false"
+                                          />
+                                        </RadioGroup>
+                                      </FormControl>
+                                    </div>
+                                    <hr className="w-full h-2 text-black " />
+                                  </>
+                                )
+                              )
                           )}
                         <TextField
                           id="outlined-multiline-static"
-                          label="commentaire"
+                          label="comment"
                           multiline
                           size={"medium"}
                           rows={4}
-                          placeholder="Laisser un commentaire"
+                          placeholder="comment"
                           className="w-full"
-                          value={comments[index] || ""}
-                          onChange={(e: any) => handleChangeInput(e, index)}
+                          value={data[index][0].commentaire}
+                          onChange={(e: any) => handleChangeInput(e, index, 0)}
                         />
                       </li>
                     </ul>
@@ -209,7 +339,7 @@ const Questions = () => {
         className=" bg-blue-600 absolute right-14
       w-[100px] h-[50px] flex justify-center items-center"
       >
-        <button type="submit">envoyer</button>
+        <button onClick={SendForm}>envoyer</button>
       </div>
     </div>
   );
