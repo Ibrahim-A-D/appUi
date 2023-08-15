@@ -1,7 +1,5 @@
-import React, { useState } from "react";
 import { BsFillEyeSlashFill } from "react-icons/bs";
 const Souscription = () => {
-  const [sidebar, setsidebar] = useState();
   return (
     <div className="w-full h-screen px-4 py-16 bg-gradient-to-tl from-green-400 to-indigo-900">
       <div className="flex flex-col items-center justify-center">

@@ -4,7 +4,6 @@ import {
   createBrowserRouter,
   Navigate,
   RouterProvider,
-  useNavigate,
 } from "react-router-dom";
 import Questions from "./quizModule/question";
 import { app } from "./config";

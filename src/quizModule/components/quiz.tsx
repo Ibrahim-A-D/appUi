@@ -1,4 +1,3 @@
-import { useState } from "react";
 export const Quiz = () => {
   return (
     <div className="border flex items-center h-full border-black w-[70%] mx-auto rounded-lg p-14">

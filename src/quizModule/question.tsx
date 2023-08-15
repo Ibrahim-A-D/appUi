@@ -17,27 +17,21 @@ import FormLabel from "@mui/material/FormLabel";
 import TextField from "@mui/material/TextField";
 import { db } from "../config";
 import { getAuth } from "firebase/auth";
-import { dataToSave } from "../helpers";
 import {
-  getFirestore,
   collection,
   getDocs,
   addDoc,
   setDoc,
-  doc,
   onSnapshot,
   where,
   query,
   orderBy,
-  FieldPath,
 } from "firebase/firestore";
 import useArticleStore from "../store/formStore";
 
 const Questions = () => {
   const [data, setData] = useState<any[]>([]);
-  const [datacopy, setDataCopy] = useState<any[]>([]);
   const [boxIndex, setBoxIndex] = useState(null);
-  const [comments, setComments] = useState<string[]>([]);
   const auth = getAuth();
   const userStore = useArticleStore();
 
