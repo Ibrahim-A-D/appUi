@@ -14,6 +14,7 @@ export const Forms = () => {
   const authe = getAuth();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement> | undefined) => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const { name, value } = e!.target;
     setAuth({
       ...auth,
