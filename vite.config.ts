@@ -7,10 +7,10 @@ export default defineConfig({
   experimental: {
     renderBuiltUrl(filename: string, { hostId, hostType, type }: { hostId: string, hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
       if (type === 'public') {
-        return '/' + filename
+        return '/src/' + filename
       }
       else {
-        return '/' + filename
+        return '/src/' + filename
       }
     }
   }
